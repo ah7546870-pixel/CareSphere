@@ -7,9 +7,9 @@ class AppConstants {
   static const String esp32DefaultIp = '192.168.1.150';
 
   // Demo user data
-  static const String demoPatientName = 'Eleanor Vance';
-  static const String demoPatientAge = '78 yrs';
-  static const String demoPatientBloodGroup = 'O+';
+  static const String demoPatientName = 'Aslam';
+  static const String demoPatientAge = '50 yrs';
+  static const String demoPatientBloodGroup = 'B+';
   static const String demoPatientLocation = 'Sector 4, Green Valley Home, Bengaluru';
 
   // Sensor Thresholds

@@ -16,11 +16,13 @@ class MainNavigationWrapper extends ConsumerWidget {
     if (location.startsWith('/monitoring')) return 1;
     if (location.startsWith('/ai-insights')) return 2;
     if (location.startsWith('/smart-hub')) return 3;
-    if (location.startsWith('/caregiver')) return 4;
+    if (location.startsWith('/caregiver') || location.startsWith('/medication')) return 4;
     return 0;
   }
 
-  void _onItemTapped(int index, BuildContext context) {
+  void _onItemTapped(int index, BuildContext context, WidgetRef ref) {
+    final user = ref.read(authStateProvider).value;
+    final isCaregiver = user?.role == UserRole.caregiver;
     switch (index) {
       case 0:
         context.go('/dashboard');
@@ -35,7 +37,11 @@ class MainNavigationWrapper extends ConsumerWidget {
         context.go('/smart-hub');
         break;
       case 4:
-        context.go('/caregiver');
+        if (isCaregiver) {
+          context.go('/caregiver');
+        } else {
+          context.go('/medication');
+        }
         break;
     }
   }
@@ -72,7 +78,7 @@ class MainNavigationWrapper extends ConsumerWidget {
           borderRadius: BorderRadius.circular(28),
           child: NavigationBar(
             selectedIndex: selectedIndex > 4 ? 0 : selectedIndex,
-            onDestinationSelected: (idx) => _onItemTapped(idx, context),
+            onDestinationSelected: (idx) => _onItemTapped(idx, context, ref),
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.transparent,
             indicatorColor: AppTheme.primaryTeal.withValues(alpha: 0.12),

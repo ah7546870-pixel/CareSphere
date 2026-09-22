@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/medication_alert_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/models/alert_model.dart';
@@ -15,6 +16,18 @@ class CaregiverScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final user = ref.watch(authStateProvider).value;
     final alerts = ref.watch(alertProvider);
+
+    final patientName = (user?.name.isNotEmpty ?? false)
+        ? user!.name
+        : AppConstants.demoPatientName;
+    final patientAge = (user?.age != null && user!.age > 0)
+        ? '${user.age} Yrs'
+        : AppConstants.demoPatientAge;
+    final patientBlood = (user?.bloodGroup != null &&
+            user!.bloodGroup.isNotEmpty &&
+            user.bloodGroup != 'Not specified')
+        ? user.bloodGroup
+        : AppConstants.demoPatientBloodGroup;
 
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
@@ -62,16 +75,16 @@ class CaregiverScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?.name ?? 'Unknown Elder',
+                            patientName,
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontFamily: 'Outfit'),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            '78 Yrs • Blood Group: O+',
-                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                            '$patientAge • Blood Group: $patientBlood',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                           ),
-                          SizedBox(height: 6),
-                          StatusBadge(
+                          const SizedBox(height: 6),
+                          const StatusBadge(
                             label: 'STABLE CONDITION',
                             color: Color(0xFF0D9488),
                             icon: Icons.check_circle_rounded,
@@ -157,8 +170,14 @@ class CaregiverScreen extends ConsumerWidget {
                       text: 'Voice Call',
                       icon: Icons.call_rounded,
                       onPressed: () {
+                        final contactName = (user?.emergencyContactName.isNotEmpty == true && user!.emergencyContactName != 'Not provided')
+                            ? user.emergencyContactName
+                            : 'Emergency Contact';
+                        final contactPhone = (user?.emergencyContactPhone.isNotEmpty == true && user!.emergencyContactPhone != 'Not provided')
+                            ? user.emergencyContactPhone
+                            : (user?.phone.isNotEmpty == true ? user!.phone : '+91 87548 14489');
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Dialing Direct Caregiver Line (+91 98765 43210)...')),
+                          SnackBar(content: Text('Dialing $contactName ($contactPhone)...')),
                         );
                       },
                     ),
@@ -170,8 +189,11 @@ class CaregiverScreen extends ConsumerWidget {
                       icon: Icons.videocam_rounded,
                       isSecondary: true,
                       onPressed: () {
+                        final contactName = (user?.emergencyContactName.isNotEmpty == true && user!.emergencyContactName != 'Not provided')
+                            ? user.emergencyContactName
+                            : patientName;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Initiating CareSphere WebRTC Video Channel...')),
+                          SnackBar(content: Text('Initiating CareSphere WebRTC Video Channel with $contactName...')),
                         );
                       },
                     ),

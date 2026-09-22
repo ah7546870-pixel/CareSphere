@@ -29,7 +29,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   final _ageCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _elderCodeCtrl = TextEditingController();
-  final _bloodGroupCtrl = TextEditingController(text: 'O+');
+  final _bloodGroupCtrl = TextEditingController(text: 'B+');
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _medicalConditionsCtrl = TextEditingController();
@@ -84,8 +84,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     if (!_formKey.currentState!.validate()) return;
     setState(() => _errorMessage = null);
 
-    final age = int.tryParse(_ageCtrl.text.trim()) ?? 30;
-    final height = double.tryParse(_heightCtrl.text.trim()) ?? 162.0;
+    final age = int.tryParse(_ageCtrl.text.trim()) ?? 50;
+    final height = double.tryParse(_heightCtrl.text.trim()) ?? 170.0;
     final weight = double.tryParse(_weightCtrl.text.trim()) ?? 65.0;
 
     await ref.read(authStateProvider.notifier).signup(

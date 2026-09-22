@@ -254,13 +254,13 @@ class ProfileScreen extends ConsumerWidget {
               // Physical Vitals Metrics Grid
               Row(
                 children: [
-                  Expanded(child: _buildMetricCard('Age', user?.age != null && user!.age > 0 ? '${user.age} yrs' : 'Not set', Icons.cake_outlined)),
+                  Expanded(child: _buildMetricCard('Age', user?.age != null && user!.age > 0 ? '${user.age} yrs' : '50 yrs', Icons.cake_outlined)),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildMetricCard('Blood', user?.bloodGroup ?? 'Not set', Icons.bloodtype_outlined)),
+                  Expanded(child: _buildMetricCard('Blood', (user?.bloodGroup != null && user!.bloodGroup.isNotEmpty && user.bloodGroup != 'Not specified') ? user.bloodGroup : 'B+', Icons.bloodtype_outlined)),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildMetricCard('Weight', user?.weight != null && user!.weight > 0 ? '${user.weight} kg' : 'Not set', Icons.monitor_weight_outlined)),
+                  Expanded(child: _buildMetricCard('Weight', user?.weight != null && user!.weight > 0 ? '${user.weight} kg' : '65 kg', Icons.monitor_weight_outlined)),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildMetricCard('Height', user?.height != null && user!.height > 0 ? '${user.height} cm' : 'Not set', Icons.height_rounded)),
+                  Expanded(child: _buildMetricCard('Height', user?.height != null && user!.height > 0 ? '${user.height} cm' : '170 cm', Icons.height_rounded)),
                 ],
               ),
 
