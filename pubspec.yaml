@@ -1,0 +1,56 @@
+name: caresphere
+description: "CareSphere - AI-Powered Elderly Healthcare Monitoring & IoT Hub Platform"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management & Architecture
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation & Routing
+  go_router: ^14.0.0
+
+  # UI / Aesthetics & Design
+  google_fonts: ^6.2.1
+  font_awesome_flutter: ^10.7.0
+  flutter_spinkit: ^5.2.1
+  percent_indicator: ^4.2.3
+  intl: ^0.20.3
+  animate_do: ^3.3.4
+  smooth_page_indicator: ^1.1.0
+
+  # Charts & Visualization
+  fl_chart: ^0.68.0
+
+  # Supabase
+  supabase_flutter: ^2.8.4
+
+  # Networking & Async
+  dio: ^5.4.3+1
+  http: ^1.2.1
+  connectivity_plus: ^6.0.3
+
+  # PDF Export & Printing
+  pdf: ^3.10.8
+  printing: ^5.13.1
+
+  # Shared Utilities & Storage
+  shared_preferences: ^2.2.3
+  uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
