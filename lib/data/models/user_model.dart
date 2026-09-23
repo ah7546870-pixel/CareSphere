@@ -35,6 +35,24 @@ class UserModel {
     this.emergencyContactPhone = 'Not provided',
   });
 
+  factory UserModel.defaultPatient() {
+    return UserModel(
+      id: 'da390507-f906-412d-b975-2616e05f1c0c',
+      email: 'ah7546870@gmail.com',
+      name: 'Aslam',
+      role: UserRole.patient,
+      phone: '8754814489',
+      elderCode: '482810',
+      age: 50,
+      bloodGroup: 'B+',
+      weight: 65.0,
+      height: 170.0,
+      medicalConditions: 'Mild Hypertension',
+      emergencyContactName: 'Yoosuf',
+      emergencyContactPhone: '9895843898',
+    );
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String? ?? '',

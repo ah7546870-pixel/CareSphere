@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/esp32_repository.dart';
 import '../../../data/repositories/ai_repository.dart';
@@ -94,7 +95,9 @@ class _ElderDashboardScreenState extends ConsumerState<ElderDashboardScreen>
                                   ),
                                 ),
                                 Text(
-                                  user?.name != null ? user!.name.split(' ').first : 'Friend',
+                                  (user?.name != null && user!.name.isNotEmpty)
+                                      ? user.name.split(' ').first
+                                      : AppConstants.demoPatientName,
                                   style: const TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
@@ -423,19 +426,19 @@ class _ElderDashboardScreenState extends ConsumerState<ElderDashboardScreen>
                   children: [
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.router_rounded,
-                        label: 'IoT Hub',
-                        color: AppTheme.accentIndigo,
-                        onTap: () => context.go('/smart-hub'),
+                        icon: Icons.volunteer_activism_rounded,
+                        label: 'Caregiver',
+                        color: AppTheme.primaryTeal,
+                        onTap: () => context.go('/caregiver'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.show_chart_rounded,
-                        label: 'History',
-                        color: AppTheme.primaryTeal,
-                        onTap: () => context.go('/telemetry-history'),
+                        icon: Icons.router_rounded,
+                        label: 'IoT Hub',
+                        color: AppTheme.accentIndigo,
+                        onTap: () => context.go('/smart-hub'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -450,10 +453,10 @@ class _ElderDashboardScreenState extends ConsumerState<ElderDashboardScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.notifications_rounded,
-                        label: 'Alerts',
+                        icon: Icons.show_chart_rounded,
+                        label: 'History',
                         color: AppTheme.accentAmber,
-                        onTap: () => context.go('/alerts'),
+                        onTap: () => context.go('/telemetry-history'),
                       ),
                     ),
                   ],

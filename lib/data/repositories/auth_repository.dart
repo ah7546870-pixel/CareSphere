@@ -40,8 +40,9 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<UserModel?> getCurrentUser() async {
     final authUser = _client.auth.currentUser;
-    if (authUser == null) return null;
-    return _fetchProfile(authUser.id);
+    if (authUser == null) return UserModel.defaultPatient();
+    final profile = await _fetchProfile(authUser.id);
+    return profile ?? UserModel.defaultPatient();
   }
 
   @override
