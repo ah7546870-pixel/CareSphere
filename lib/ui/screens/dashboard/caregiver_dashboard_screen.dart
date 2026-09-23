@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/ai_prediction_model.dart';
+import '../../../data/models/user_model.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/esp32_repository.dart';
 import '../../../data/repositories/ai_repository.dart';
@@ -20,6 +21,8 @@ class CaregiverDashboardScreen extends ConsumerWidget {
 
     final espAsync = ref.watch(esp32StreamProvider);
     final aiAsync = ref.watch(aiPredictionProvider);
+    final patientAsync = ref.watch(monitoredPatientProvider);
+    final patient = patientAsync.value;
 
     final espData = espAsync.value ?? ref.read(esp32RepoProvider).latest;
 
@@ -102,15 +105,8 @@ class CaregiverDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                 ],
-                Text(
-                  'Monitoring: Elder Code #${user?.linkedElderCode ?? "Unknown"}',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                ),
-                const SizedBox(height: 16),
+                _buildPatientBanner(context, theme, patient, user?.linkedElderCode),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
@@ -284,6 +280,207 @@ class CaregiverDashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPatientBanner(
+    BuildContext context,
+    ThemeData theme,
+    UserModel? patient,
+    String? code,
+  ) {
+    final patientName = patient?.name ?? 'Assigned Patient';
+    final activeCode = code ?? patient?.elderCode ?? "N/A";
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.12),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.35),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.elderly_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Text(
+                          patientName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            'Patient Code: #$activeCode',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Live telemetry stream active for this patient',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (patient != null) ...[
+            const SizedBox(height: 14),
+            Divider(
+              height: 1,
+              color: theme.dividerColor.withValues(alpha: 0.08),
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildInfoChip(
+                    theme,
+                    Icons.cake_outlined,
+                    'Age',
+                    patient.age > 0 ? '${patient.age} yrs' : 'N/A',
+                  ),
+                  const SizedBox(width: 10),
+                  _buildInfoChip(
+                    theme,
+                    Icons.bloodtype_outlined,
+                    'Blood Group',
+                    patient.bloodGroup.isNotEmpty ? patient.bloodGroup : 'N/A',
+                  ),
+                  const SizedBox(width: 10),
+                  _buildInfoChip(
+                    theme,
+                    Icons.healing_outlined,
+                    'Condition',
+                    patient.medicalConditions.isNotEmpty && patient.medicalConditions != 'None specified'
+                        ? patient.medicalConditions
+                        : 'Normal Health',
+                  ),
+                  if (patient.emergencyContactPhone.isNotEmpty &&
+                      patient.emergencyContactPhone != 'Not provided') ...[
+                    const SizedBox(width: 10),
+                    _buildInfoChip(
+                      theme,
+                      Icons.contact_phone_outlined,
+                      'Emergency',
+                      patient.emergencyContactPhone,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(
+    ThemeData theme,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: const Color(0xFF4F46E5),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 11,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }

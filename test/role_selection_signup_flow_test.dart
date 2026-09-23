@@ -104,6 +104,23 @@ class MockRoleSelectionAuthRepo implements AuthRepository {
   }
 
   @override
+  Future<UserModel?> getPatientByElderCode(String code) async {
+    for (final u in _db.values) {
+      if (u.elderCode == code.trim()) return u;
+    }
+    return null;
+  }
+
+  @override
+  Future<UserModel?> loginCaregiver({
+    required String email,
+    required String password,
+    required String patientCode,
+  }) async {
+    return login(email, password);
+  }
+
+  @override
   Future<void> resetPassword(String email) async {}
 }
 

@@ -71,6 +71,20 @@ class TestAuthRepository implements AuthRepository {
   Future<bool> checkPhoneExists(String phone) async => false;
 
   @override
+  Future<UserModel?> getPatientByElderCode(String code) async {
+    return UserModel.defaultPatient();
+  }
+
+  @override
+  Future<UserModel?> loginCaregiver({
+    required String email,
+    required String password,
+    required String patientCode,
+  }) async {
+    return login(email, password);
+  }
+
+  @override
   Future<void> resetPassword(String email) async {}
 }
 

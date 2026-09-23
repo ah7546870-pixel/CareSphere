@@ -112,6 +112,24 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<UserModel?> getPatientByElderCode(String code) async {
+    for (final u in _users.values) {
+      if (u.elderCode == code.trim()) return u;
+    }
+    if (code.trim() == '654321') return UserModel.defaultPatient();
+    return null;
+  }
+
+  @override
+  Future<UserModel?> loginCaregiver({
+    required String email,
+    required String password,
+    required String patientCode,
+  }) async {
+    return login(email, password);
+  }
+
+  @override
   Future<void> resetPassword(String email) async {}
 }
 

@@ -359,7 +359,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         isLoading: authState.isLoading,
                         onTap: _handleLogin,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 18),
+
+                      // Caregiver Login switch
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            "Are you a Caregiver? ",
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.45),
+                              fontSize: 13,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => context.go('/caregiver-login'),
+                            child: const Text(
+                              'Sign In with Patient Code',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.accentPurple,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
 
                       // Register link
                       Wrap(
@@ -605,19 +632,24 @@ class _GradientButtonState extends State<GradientButton>
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       if (widget.icon != null) ...[
                         Icon(widget.icon, color: Colors.white, size: 20),
                         const SizedBox(width: 8),
                       ],
-                      Text(
-                        widget.text,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontFamily: 'Outfit',
-                          letterSpacing: 0.3,
+                      Flexible(
+                        child: Text(
+                          widget.text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Outfit',
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
                     ],

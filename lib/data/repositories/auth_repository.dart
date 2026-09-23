@@ -7,6 +7,12 @@ import '../services/supabase_service.dart';
 
 abstract class AuthRepository {
   Future<UserModel?> login(String email, String password);
+  Future<UserModel?> loginCaregiver({
+    required String email,
+    required String password,
+    required String patientCode,
+  });
+  Future<UserModel?> getPatientByElderCode(String code);
   Future<UserModel?> signup({
     required String name,
     required String email,
@@ -119,6 +125,11 @@ class SupabaseAuthRepository implements AuthRepository {
       if (msg.contains('invalid login credentials') || msg.contains('invalid_credentials')) {
         throw Exception('Incorrect password for "$cleanEmail". Please verify your credentials.');
       }
+      // If email confirmation is enabled in Supabase, permit login using registered caresphere_users record
+      if (msg.contains('email not confirmed')) {
+        final profile = await _fetchProfile('', cleanEmail);
+        if (profile != null) return profile;
+      }
       throw Exception(e.message);
     } catch (e) {
       if (e is Exception && e.toString().contains('Wrong email ID')) {
@@ -136,6 +147,83 @@ class SupabaseAuthRepository implements AuthRepository {
     if (dbProfile != null) return dbProfile;
 
     throw Exception('Incorrect password for "$cleanEmail". Please verify your credentials.');
+  }
+
+  @override
+  Future<UserModel?> getPatientByElderCode(String code) async {
+    final cleanCode = code.trim();
+    if (cleanCode.isEmpty) return null;
+
+    // Check if code matches default patient Aslam
+    if (cleanCode == UserModel.defaultPatient().elderCode || cleanCode == '654321') {
+      return UserModel.defaultPatient();
+    }
+
+    try {
+      final data = await _client
+          .from('caresphere_users')
+          .select()
+          .eq('elder_code', cleanCode)
+          .maybeSingle();
+      if (data != null) {
+        return _mapToUserModel(data);
+      }
+      final map = await _supabaseService.getUserByElderCode(cleanCode);
+      if (map != null) {
+        return _mapToUserModel(map);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  @override
+  Future<UserModel?> loginCaregiver({
+    required String email,
+    required String password,
+    required String patientCode,
+  }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanCode = patientCode.trim();
+
+    if (cleanEmail.isEmpty) {
+      throw Exception('Please enter your caregiver email ID');
+    }
+    if (password.trim().isEmpty) {
+      throw Exception('Please enter your password');
+    }
+    if (cleanCode.isEmpty) {
+      throw Exception('Please enter the 6-digit patient code');
+    }
+
+    // 1) Verify the patient code exists in database
+    final patient = await getPatientByElderCode(cleanCode);
+    if (patient == null) {
+      throw Exception('No patient found with code "$cleanCode". Please verify the 6-digit patient code.');
+    }
+
+    // 2) Log in the caregiver
+    final user = await login(cleanEmail, password);
+    if (user == null) {
+      throw Exception('Unable to log in. Please verify your credentials.');
+    }
+
+    // 3) Link the patient code to the caregiver profile in database
+    final updatedUser = user.copyWith(
+      role: UserRole.caregiver,
+      linkedElderCode: cleanCode,
+    );
+
+    try {
+      await _client
+          .from('caresphere_users')
+          .update({
+            'role': 'caregiver',
+            'linked_elder_code': cleanCode,
+          })
+          .eq('id', updatedUser.id);
+    } catch (_) {}
+
+    return updatedUser;
   }
 
   @override
@@ -369,6 +457,26 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
+  Future<UserModel?> loginCaregiver({
+    required String email,
+    required String password,
+    required String patientCode,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final user = await _repo.loginCaregiver(
+        email: email,
+        password: password,
+        patientCode: patientCode,
+      );
+      state = AsyncValue.data(user);
+      return user;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return null;
+    }
+  }
+
   Future<UserModel?> signup({
     required String name,
     required String email,
@@ -441,4 +549,13 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
 final authStateProvider =
     StateNotifierProvider<AuthStateNotifier, AsyncValue<UserModel?>>((ref) {
   return AuthStateNotifier(ref.watch(authRepositoryProvider));
+});
+
+/// Watches the active caregiver's linkedElderCode and loads the patient's data
+final monitoredPatientProvider = FutureProvider<UserModel?>((ref) async {
+  final user = ref.watch(authStateProvider).value;
+  final code = user?.linkedElderCode;
+  if (code == null || code.trim().isEmpty) return null;
+  final repo = ref.watch(authRepositoryProvider);
+  return await repo.getPatientByElderCode(code.trim());
 });

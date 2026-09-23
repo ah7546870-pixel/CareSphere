@@ -215,7 +215,53 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen>
                                         : [AppTheme.accentIndigo, AppTheme.accentPurple],
                                     onTap: _handleContinue,
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 14),
+
+                                  // Direct Sign In Button for Selected Role
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        if (_selectedRole == UserRole.caregiver) {
+                                          context.go('/caregiver-login');
+                                        } else {
+                                          context.go('/login');
+                                        }
+                                      },
+                                      icon: Icon(
+                                        _selectedRole == UserRole.caregiver
+                                            ? Icons.volunteer_activism_rounded
+                                            : Icons.elderly_rounded,
+                                        size: 18,
+                                        color: Colors.white70,
+                                      ),
+                                      label: Text(
+                                        _selectedRole == UserRole.caregiver
+                                            ? 'Sign In as Caregiver'
+                                            : 'Sign In as Patient',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: 'Outfit',
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        side: BorderSide(
+                                          color: (_selectedRole == UserRole.caregiver
+                                                  ? AppTheme.accentPurple
+                                                  : AppTheme.primaryTealLight)
+                                              .withValues(alpha: 0.5),
+                                          width: 1.4,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
 
                                   // Already have an account? Sign In
                                   Wrap(
@@ -230,13 +276,21 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen>
                                         ),
                                       ),
                                       GestureDetector(
-                                        onTap: () => context.go('/login'),
-                                        child: const Text(
+                                        onTap: () {
+                                          if (_selectedRole == UserRole.caregiver) {
+                                            context.go('/caregiver-login');
+                                          } else {
+                                            context.go('/login');
+                                          }
+                                        },
+                                        child: Text(
                                           'Sign In',
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: AppTheme.primaryTealLight,
+                                            color: _selectedRole == UserRole.caregiver
+                                                ? AppTheme.accentPurple
+                                                : AppTheme.primaryTealLight,
                                           ),
                                         ),
                                       ),

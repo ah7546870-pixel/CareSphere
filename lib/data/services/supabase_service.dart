@@ -282,6 +282,33 @@ class SupabaseService {
     } catch (_) {}
     return null;
   }
+
+  /// Get user by elder code from caresphere_users table
+  Future<Map<String, dynamic>?> getUserByElderCode(String elderCode) async {
+    if (!isConfigured) return null;
+    try {
+      final cleanUrl = _url.endsWith('/') ? _url.substring(0, _url.length - 1) : _url;
+      final cleanCode = elderCode.trim();
+      if (cleanCode.isEmpty) return null;
+      final endpoint = Uri.parse('$cleanUrl/rest/v1/caresphere_users?elder_code=eq.$cleanCode');
+
+      final response = await http.get(
+        endpoint,
+        headers: {
+          'apikey': _anonKey,
+          'Authorization': 'Bearer $_anonKey',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        if (data.isNotEmpty) {
+          return data.first as Map<String, dynamic>;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
 }
 
 final supabaseServiceProvider = Provider<SupabaseService>((ref) {

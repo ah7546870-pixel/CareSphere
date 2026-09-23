@@ -8,6 +8,7 @@ import '../../ui/screens/splash/splash_screen.dart';
 import '../../ui/screens/onboarding/onboarding_screen.dart';
 import '../../ui/screens/auth/role_selection_screen.dart';
 import '../../ui/screens/auth/login_screen.dart';
+import '../../ui/screens/auth/caregiver_login_screen.dart';
 import '../../ui/screens/auth/signup_screen.dart';
 import '../../ui/screens/auth/forgot_password_screen.dart';
 import '../../ui/screens/auth/otp_verification_screen.dart';
@@ -26,6 +27,7 @@ import '../../ui/screens/settings/settings_screen.dart';
 final _authRoutes = {
   '/role-selection',
   '/login',
+  '/caregiver-login',
   '/signup',
   '/forgot-password',
   '/otp-verify',
@@ -63,7 +65,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         session = Supabase.instance.client.auth.currentSession;
       } catch (_) {}
 
-      final isLoggedIn = session != null || authState.value != null;
+      final isLoggedIn = session != null || authState.valueOrNull != null;
       final isAuthRoute = _authRoutes.contains(state.matchedLocation);
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';
@@ -95,6 +97,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/caregiver-login',
+        builder: (context, state) => const CaregiverLoginScreen(),
       ),
       GoRoute(
         path: '/signup',
