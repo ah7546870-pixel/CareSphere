@@ -148,46 +148,49 @@ class _ElderDashboardScreenState extends ConsumerState<ElderDashboardScreen>
                       const SizedBox(height: 24),
 
                       // Quick stats row
-                      Row(
-                        children: [
-                          _QuickStatChip(
-                            icon: Icons.favorite_rounded,
-                            value: espData.vitals.isConnected ? '${espData.vitals.heartRate}' : 'Not Connected',
-                            unit: espData.vitals.isConnected ? 'BPM' : '',
-                            color: espData.vitals.isConnected ? const Color(0xFFE11D48) : Colors.white60,
-                          ),
-                          const SizedBox(width: 10),
-                          _QuickStatChip(
-                            icon: Icons.water_drop_rounded,
-                            value: espData.vitals.isConnected ? '${espData.vitals.spO2}' : 'Not Connected',
-                            unit: espData.vitals.isConnected ? '%' : '',
-                            color: espData.vitals.isConnected ? AppTheme.primaryTealLight : Colors.white60,
-                          ),
-                          const SizedBox(width: 10),
-                          aiAsync.when(
-                            skipLoadingOnReload: true,
-                            skipLoadingOnRefresh: true,
-                            data: (ai) => _QuickStatChip(
-                              icon: Icons.psychology_rounded,
-                              value: espData.isConnected ? '${ai.riskPercentage.toInt()}' : 'Not Connected',
-                              unit: espData.isConnected ? 'Risk' : '',
-                              color: espData.isConnected
-                                  ? (ai.riskLevel == RiskLevel.critical
-                                      ? const Color(0xFFE11D48)
-                                      : ai.riskLevel == RiskLevel.high
-                                          ? AppTheme.accentAmber
-                                          : AppTheme.accentEmerald)
-                                  : Colors.white60,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _QuickStatChip(
+                              icon: Icons.favorite_rounded,
+                              value: espData.vitals.isConnected ? '${espData.vitals.heartRate}' : 'Not Connected',
+                              unit: espData.vitals.isConnected ? 'BPM' : '',
+                              color: espData.vitals.isConnected ? const Color(0xFFE11D48) : Colors.white60,
                             ),
-                            loading: () => const _QuickStatChip(
-                              icon: Icons.psychology_rounded,
-                              value: '—',
-                              unit: 'AI',
-                              color: Colors.grey,
+                            const SizedBox(width: 10),
+                            _QuickStatChip(
+                              icon: Icons.water_drop_rounded,
+                              value: espData.vitals.isConnected ? '${espData.vitals.spO2}' : 'Not Connected',
+                              unit: espData.vitals.isConnected ? '%' : '',
+                              color: espData.vitals.isConnected ? AppTheme.primaryTealLight : Colors.white60,
                             ),
-                            error: (_, __) => const SizedBox.shrink(),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            aiAsync.when(
+                              skipLoadingOnReload: true,
+                              skipLoadingOnRefresh: true,
+                              data: (ai) => _QuickStatChip(
+                                icon: Icons.psychology_rounded,
+                                value: espData.isConnected ? '${ai.riskPercentage.toInt()}' : 'Not Connected',
+                                unit: espData.isConnected ? 'Risk' : '',
+                                color: espData.isConnected
+                                    ? (ai.riskLevel == RiskLevel.critical
+                                        ? const Color(0xFFE11D48)
+                                        : ai.riskLevel == RiskLevel.high
+                                            ? AppTheme.accentAmber
+                                            : AppTheme.accentEmerald)
+                                    : Colors.white60,
+                              ),
+                              loading: () => const _QuickStatChip(
+                                icon: Icons.psychology_rounded,
+                                value: '—',
+                                unit: 'AI',
+                                color: Colors.grey,
+                              ),
+                              error: (_, __) => const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

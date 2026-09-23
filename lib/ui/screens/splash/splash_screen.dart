@@ -70,7 +70,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   void _navigate() {
-    final session = Supabase.instance.client.auth.currentSession;
+    Session? session;
+    try {
+      session = Supabase.instance.client.auth.currentSession;
+    } catch (_) {}
     final user = ref.read(authStateProvider).value;
     if (session != null || user != null) {
       context.go('/dashboard');

@@ -208,8 +208,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(ctx);
-                    context.go('/dashboard');
+                    Navigator.of(ctx).pop();
+                    if (mounted) {
+                      context.go('/dashboard');
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryTeal,

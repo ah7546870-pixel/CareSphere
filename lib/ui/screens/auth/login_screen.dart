@@ -136,65 +136,67 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Widget _buildBrandPanel(BuildContext context, {bool compact = false}) {
-    return Padding(
-      padding: EdgeInsets.all(compact ? 32 : 48),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment:
-            compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-        children: [
-          // Logo
-          Center(
-            child: Container(
-              width: compact ? 60 : 72,
-              height: compact ? 60 : 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primaryTeal, AppTheme.primaryTealLight],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryTeal.withValues(alpha: 0.4),
-                    blurRadius: 24,
-                    spreadRadius: 4,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.all(compact ? 32 : 48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment:
+              compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+          children: [
+            // Logo
+            Center(
+              child: Container(
+                width: compact ? 60 : 72,
+                height: compact ? 60 : 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryTeal, AppTheme.primaryTealLight],
                   ),
-                ],
-              ),
-              child: Icon(Icons.health_and_safety_rounded,
-                  size: compact ? 32 : 38, color: Colors.white),
-            ),
-          ),
-          SizedBox(height: compact ? 16 : 28),
-          if (!compact) ...[
-            const Text(
-              'CareSphere',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontFamily: 'Outfit',
-                letterSpacing: -0.5,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryTeal.withValues(alpha: 0.4),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.health_and_safety_rounded,
+                    size: compact ? 32 : 38, color: Colors.white),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'The intelligent health guardian\nfor your family.',
-              style: TextStyle(
-                fontSize: 18,
-                height: 1.6,
-                color: Colors.white.withValues(alpha: 0.55),
+            SizedBox(height: compact ? 16 : 28),
+            if (!compact) ...[
+              const Text(
+                'CareSphere',
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Outfit',
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 40),
-            _buildFeatureLine(
-                Icons.favorite_rounded, 'Real-time vital monitoring'),
-            const SizedBox(height: 14),
-            _buildFeatureLine(Icons.psychology_rounded, 'AI risk predictions'),
-            const SizedBox(height: 14),
-            _buildFeatureLine(Icons.notifications_rounded, 'Instant alerts'),
+              const SizedBox(height: 12),
+              Text(
+                'The intelligent health guardian\nfor your family.',
+                style: TextStyle(
+                  fontSize: 18,
+                  height: 1.6,
+                  color: Colors.white.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(height: 40),
+              _buildFeatureLine(
+                  Icons.favorite_rounded, 'Real-time vital monitoring'),
+              const SizedBox(height: 14),
+              _buildFeatureLine(Icons.psychology_rounded, 'AI risk predictions'),
+              const SizedBox(height: 14),
+              _buildFeatureLine(Icons.notifications_rounded, 'Instant alerts'),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -211,12 +213,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           child: Icon(icon, color: AppTheme.primaryTealLight, size: 18),
         ),
         const SizedBox(width: 14),
-        Text(
-          text,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -248,11 +252,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     width: 1.5,
                   ),
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
                         'Welcome back',
@@ -346,8 +351,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       const SizedBox(height: 24),
 
                       // Register link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             "Don't have an account? ",
@@ -373,6 +379,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
                 ),
               ),
+            ),
             ),
           ),
         ),

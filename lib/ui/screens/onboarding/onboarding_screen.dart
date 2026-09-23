@@ -149,11 +149,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   itemBuilder: (context, index) {
                     return FadeTransition(
                       opacity: _fadeIn,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
                             // Animated icon orb
                             TweenAnimationBuilder<double>(
                               tween: Tween(begin: 0.8, end: 1.0),
@@ -227,7 +229,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           ],
                         ),
                       ),
-                    );
+                    ),
+                  ),
+                );
                   },
                 ),
               ),

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class AppConstants {
   static const String appName = 'CareSphere';
   static const String appTagline = 'AI-Powered Elderly Healthcare Monitoring Platform';
