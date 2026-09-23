@@ -282,6 +282,14 @@ class SupabaseAuthRepository implements AuthRepository {
       elderCode = (100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString();
     }
 
+    final isCaregiver = role == UserRole.caregiver;
+    final effectiveBloodGroup = isCaregiver ? '' : bloodGroup;
+    final effectiveHeight = isCaregiver ? 0.0 : height;
+    final effectiveWeight = isCaregiver ? 0.0 : weight;
+    final effectiveMedicalConditions = isCaregiver ? '' : medicalConditions;
+    final effectiveEmergName = isCaregiver ? '' : emergencyContactName;
+    final effectiveEmergPhone = isCaregiver ? '' : emergencyContactPhone;
+
     // 4) Insert profile into caresphere_users table
     final profileData = {
       'id': userId,
@@ -292,12 +300,12 @@ class SupabaseAuthRepository implements AuthRepository {
       'phone': cleanPhone,
       'elder_code': elderCode,
       'linked_elder_code': linkedElderCode,
-      'blood_group': bloodGroup,
-      'height': height,
-      'weight': weight,
-      'medical_conditions': medicalConditions,
-      'emergency_contact_name': emergencyContactName,
-      'emergency_contact_phone': emergencyContactPhone,
+      'blood_group': effectiveBloodGroup,
+      'height': effectiveHeight,
+      'weight': effectiveWeight,
+      'medical_conditions': effectiveMedicalConditions,
+      'emergency_contact_name': effectiveEmergName,
+      'emergency_contact_phone': effectiveEmergPhone,
     };
 
     try {
@@ -316,16 +324,16 @@ class SupabaseAuthRepository implements AuthRepository {
       email: cleanEmail,
       name: name.trim(),
       role: role,
-      age: age,
+      age: isCaregiver ? 0 : age,
       phone: cleanPhone,
       elderCode: elderCode,
       linkedElderCode: linkedElderCode,
-      bloodGroup: bloodGroup,
-      height: height,
-      weight: weight,
-      medicalConditions: medicalConditions.isEmpty ? 'None specified' : medicalConditions,
-      emergencyContactName: emergencyContactName.isEmpty ? 'Not provided' : emergencyContactName,
-      emergencyContactPhone: emergencyContactPhone.isEmpty ? 'Not provided' : emergencyContactPhone,
+      bloodGroup: effectiveBloodGroup,
+      height: effectiveHeight,
+      weight: effectiveWeight,
+      medicalConditions: effectiveMedicalConditions.isEmpty ? 'None specified' : effectiveMedicalConditions,
+      emergencyContactName: effectiveEmergName.isEmpty ? 'Not provided' : effectiveEmergName,
+      emergencyContactPhone: effectiveEmergPhone.isEmpty ? 'Not provided' : effectiveEmergPhone,
     );
   }
 
@@ -395,29 +403,35 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   UserModel _mapToUserModel(Map<String, dynamic> json) {
+    final role = UserRole.values.firstWhere(
+      (e) => e.name == (json['role'] as String? ?? 'patient'),
+      orElse: () => UserRole.patient,
+    );
+    final isCaregiver = role == UserRole.caregiver;
+
     return UserModel(
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      role: UserRole.values.firstWhere(
-        (e) => e.name == (json['role'] as String? ?? 'patient'),
-        orElse: () => UserRole.patient,
-      ),
-      age: (json['age'] as num?)?.toInt() ?? 0,
+      role: role,
+      age: isCaregiver ? 0 : ((json['age'] as num?)?.toInt() ?? 0),
       phone: json['phone'] as String? ?? '',
       elderCode: json['elder_code'] as String?,
       linkedElderCode: json['linked_elder_code'] as String?,
       avatarUrl: json['avatar_url'] as String? ??
           'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
-      bloodGroup: json['blood_group'] as String? ?? 'Not specified',
-      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
-      height: (json['height'] as num?)?.toDouble() ?? 0.0,
-      medicalConditions:
-          json['medical_conditions'] as String? ?? 'None specified',
-      emergencyContactName:
-          json['emergency_contact_name'] as String? ?? 'Not provided',
-      emergencyContactPhone:
-          json['emergency_contact_phone'] as String? ?? 'Not provided',
+      bloodGroup: isCaregiver ? '' : (json['blood_group'] as String? ?? 'Not specified'),
+      weight: isCaregiver ? 0.0 : ((json['weight'] as num?)?.toDouble() ?? 0.0),
+      height: isCaregiver ? 0.0 : ((json['height'] as num?)?.toDouble() ?? 0.0),
+      medicalConditions: isCaregiver
+          ? ''
+          : (json['medical_conditions'] as String? ?? 'None specified'),
+      emergencyContactName: isCaregiver
+          ? ''
+          : (json['emergency_contact_name'] as String? ?? 'Not provided'),
+      emergencyContactPhone: isCaregiver
+          ? ''
+          : (json['emergency_contact_phone'] as String? ?? 'Not provided'),
     );
   }
 }

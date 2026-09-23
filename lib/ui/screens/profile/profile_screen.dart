@@ -10,6 +10,7 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   void _showEditProfileDialog(BuildContext context, WidgetRef ref, UserModel user) {
+    final isCaregiver = user.role == UserRole.caregiver;
     final nameCtrl = TextEditingController(text: user.name);
     final phoneCtrl = TextEditingController(text: user.phone);
     final ageCtrl = TextEditingController(text: user.age > 0 ? user.age.toString() : '');
@@ -28,13 +29,13 @@ class ProfileScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(color: Colors.white.withValues(alpha: 0.12), width: 1.5),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.edit_note_rounded, color: AppTheme.primaryTealLight, size: 28),
-            SizedBox(width: 10),
+            const Icon(Icons.edit_note_rounded, color: AppTheme.primaryTealLight, size: 28),
+            const SizedBox(width: 10),
             Text(
-              'Edit Health Profile',
-              style: TextStyle(
+              isCaregiver ? 'Edit Caregiver Profile' : 'Edit Health Profile',
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Outfit',
@@ -52,28 +53,30 @@ class ProfileScreen extends ConsumerWidget {
                 _buildDialogField('Full Name', nameCtrl, Icons.person_outline),
                 const SizedBox(height: 12),
                 _buildDialogField('Phone', phoneCtrl, Icons.phone_outlined, keyboardType: TextInputType.phone),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildDialogField('Age', ageCtrl, Icons.cake_outlined, keyboardType: TextInputType.number)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _buildDialogField('Blood Group', bloodCtrl, Icons.bloodtype_outlined)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildDialogField('Height (cm)', heightCtrl, Icons.height_rounded, keyboardType: TextInputType.number)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _buildDialogField('Weight (kg)', weightCtrl, Icons.monitor_weight_outlined, keyboardType: TextInputType.number)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildDialogField('Medical Conditions', medCtrl, Icons.healing_outlined),
-                const SizedBox(height: 12),
-                _buildDialogField('Emergency Contact Name', emergNameCtrl, Icons.person_pin_outlined),
-                const SizedBox(height: 12),
-                _buildDialogField('Emergency Phone', emergPhoneCtrl, Icons.phone_in_talk_outlined, keyboardType: TextInputType.phone),
+                if (!isCaregiver) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildDialogField('Age', ageCtrl, Icons.cake_outlined, keyboardType: TextInputType.number)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildDialogField('Blood Group', bloodCtrl, Icons.bloodtype_outlined)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildDialogField('Height (cm)', heightCtrl, Icons.height_rounded, keyboardType: TextInputType.number)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildDialogField('Weight (kg)', weightCtrl, Icons.monitor_weight_outlined, keyboardType: TextInputType.number)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDialogField('Medical Conditions', medCtrl, Icons.healing_outlined),
+                  const SizedBox(height: 12),
+                  _buildDialogField('Emergency Contact Name', emergNameCtrl, Icons.person_pin_outlined),
+                  const SizedBox(height: 12),
+                  _buildDialogField('Emergency Phone', emergPhoneCtrl, Icons.phone_in_talk_outlined, keyboardType: TextInputType.phone),
+                ],
               ],
             ),
           ),
@@ -85,17 +88,22 @@ class ProfileScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              final updated = user.copyWith(
-                name: nameCtrl.text.trim(),
-                phone: phoneCtrl.text.trim(),
-                age: int.tryParse(ageCtrl.text.trim()) ?? user.age,
-                bloodGroup: bloodCtrl.text.trim().isEmpty ? 'Not specified' : bloodCtrl.text.trim(),
-                height: double.tryParse(heightCtrl.text.trim()) ?? user.height,
-                weight: double.tryParse(weightCtrl.text.trim()) ?? user.weight,
-                medicalConditions: medCtrl.text.trim().isEmpty ? 'None specified' : medCtrl.text.trim(),
-                emergencyContactName: emergNameCtrl.text.trim().isEmpty ? 'Not provided' : emergNameCtrl.text.trim(),
-                emergencyContactPhone: emergPhoneCtrl.text.trim().isEmpty ? 'Not provided' : emergPhoneCtrl.text.trim(),
-              );
+              final updated = isCaregiver
+                  ? user.copyWith(
+                      name: nameCtrl.text.trim(),
+                      phone: phoneCtrl.text.trim(),
+                    )
+                  : user.copyWith(
+                      name: nameCtrl.text.trim(),
+                      phone: phoneCtrl.text.trim(),
+                      age: int.tryParse(ageCtrl.text.trim()) ?? user.age,
+                      bloodGroup: bloodCtrl.text.trim().isEmpty ? 'Not specified' : bloodCtrl.text.trim(),
+                      height: double.tryParse(heightCtrl.text.trim()) ?? user.height,
+                      weight: double.tryParse(weightCtrl.text.trim()) ?? user.weight,
+                      medicalConditions: medCtrl.text.trim().isEmpty ? 'None specified' : medCtrl.text.trim(),
+                      emergencyContactName: emergNameCtrl.text.trim().isEmpty ? 'Not provided' : emergNameCtrl.text.trim(),
+                      emergencyContactPhone: emergPhoneCtrl.text.trim().isEmpty ? 'Not provided' : emergPhoneCtrl.text.trim(),
+                    );
 
               await ref.read(authStateProvider.notifier).updateProfile(updated);
               if (ctx.mounted) Navigator.of(ctx).pop();
@@ -152,10 +160,14 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
+    final isCaregiver = user?.role == UserRole.caregiver;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Patient Health Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          isCaregiver ? 'Caregiver Profile' : 'Patient Health Profile',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           if (user != null)
             Padding(
@@ -181,11 +193,17 @@ class ProfileScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1E3A5F), Color(0xFF2B608A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: isCaregiver
+                      ? const LinearGradient(
+                          colors: [Color(0xFF283593), Color(0xFF3F51B5)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF1E3A5F), Color(0xFF2B608A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: const [
                     BoxShadow(
@@ -202,12 +220,14 @@ class ProfileScreen extends ConsumerWidget {
                       height: 90,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [AppTheme.primaryTeal, AppTheme.primaryTealLight],
+                        gradient: LinearGradient(
+                          colors: isCaregiver
+                              ? [const Color(0xFF4F46E5), const Color(0xFF7C3AED)]
+                              : [AppTheme.primaryTeal, AppTheme.primaryTealLight],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryTeal.withValues(alpha: 0.4),
+                            color: (isCaregiver ? const Color(0xFF4F46E5) : AppTheme.primaryTeal).withValues(alpha: 0.4),
                             blurRadius: 16,
                           ),
                         ],
@@ -236,13 +256,13 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       user?.email ?? '',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                     ),
                     if (user?.phone.isNotEmpty ?? false) ...[
                       const SizedBox(height: 4),
                       Text(
                         user!.phone,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 13),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
                       ),
                     ],
                   ],
@@ -251,85 +271,94 @@ class ProfileScreen extends ConsumerWidget {
 
               const SizedBox(height: 24),
 
-              // Physical Vitals Metrics Grid
-              Row(
-                children: [
-                  Expanded(child: _buildMetricCard('Age', user?.age != null && user!.age > 0 ? '${user.age} yrs' : '50 yrs', Icons.cake_outlined)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _buildMetricCard('Blood', (user?.bloodGroup != null && user!.bloodGroup.isNotEmpty && user.bloodGroup != 'Not specified') ? user.bloodGroup : 'B+', Icons.bloodtype_outlined)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _buildMetricCard('Weight', user?.weight != null && user!.weight > 0 ? '${user.weight} kg' : '65 kg', Icons.monitor_weight_outlined)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _buildMetricCard('Height', user?.height != null && user!.height > 0 ? '${user.height} cm' : '170 cm', Icons.height_rounded)),
-                ],
-              ),
-
-              if (user?.role == UserRole.patient && user?.elderCode != null) ...[
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryTeal.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.primaryTeal.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Your Unique Elder Code',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryTeal,
-                          fontSize: 13,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SelectableText(
-                        user!.elderCode!,
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 6,
-                          color: AppTheme.primaryTeal,
-                          fontFamily: 'Outfit',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Share this code with your caregiver to link accounts.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                      ),
-                    ],
-                  ),
-                ),
+              // Caregiver Account Details & Monitored Patient (NO health vitals for caregiver)
+              if (isCaregiver) ...[
+                _buildCaregiverAccountCard(user),
+                const SizedBox(height: 14),
+                _buildCaregiverMonitoredPatientCard(context, ref, user),
               ],
 
-              const SizedBox(height: 24),
+              // Physical Vitals Metrics Grid (ONLY for Patients)
+              if (!isCaregiver) ...[
+                Row(
+                  children: [
+                    Expanded(child: _buildMetricCard('Age', user?.age != null && user!.age > 0 ? '${user.age} yrs' : '50 yrs', Icons.cake_outlined)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildMetricCard('Blood', (user?.bloodGroup != null && user!.bloodGroup.isNotEmpty && user.bloodGroup != 'Not specified') ? user.bloodGroup : 'B+', Icons.bloodtype_outlined)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildMetricCard('Weight', user?.weight != null && user!.weight > 0 ? '${user.weight} kg' : '65 kg', Icons.monitor_weight_outlined)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildMetricCard('Height', user?.height != null && user!.height > 0 ? '${user.height} cm' : '170 cm', Icons.height_rounded)),
+                  ],
+                ),
 
-              // Medical Conditions Card
-              _buildInfoSectionCard(
-                title: 'Medical Conditions',
-                content: user?.medicalConditions.isNotEmpty ?? false ? user!.medicalConditions : 'None specified',
-                icon: Icons.healing_rounded,
-                iconColor: AppTheme.accentRose,
-                onEditTap: user != null ? () => _showEditProfileDialog(context, ref, user) : null,
-              ),
+                if (user?.role == UserRole.patient && user?.elderCode != null) ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryTeal.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.primaryTeal.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Your Unique Elder Code',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryTeal,
+                            fontSize: 13,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          user!.elderCode!,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 6,
+                            color: AppTheme.primaryTeal,
+                            fontFamily: 'Outfit',
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Share this code with your caregiver to link accounts.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
-              const SizedBox(height: 14),
+                const SizedBox(height: 24),
 
-              // Emergency Contact Card
-              _buildInfoSectionCard(
-                title: 'Emergency Contact',
-                content: (user?.emergencyContactName.isNotEmpty ?? false)
-                    ? '${user!.emergencyContactName} ${user.emergencyContactPhone.isNotEmpty ? "(${user.emergencyContactPhone})" : ""}'
-                    : 'Not provided',
-                icon: Icons.phone_in_talk_rounded,
-                iconColor: AppTheme.accentEmerald,
-                onEditTap: user != null ? () => _showEditProfileDialog(context, ref, user) : null,
-              ),
+                // Medical Conditions Card
+                _buildInfoSectionCard(
+                  title: 'Medical Conditions',
+                  content: user?.medicalConditions.isNotEmpty ?? false ? user!.medicalConditions : 'None specified',
+                  icon: Icons.healing_rounded,
+                  iconColor: AppTheme.accentRose,
+                  onEditTap: user != null ? () => _showEditProfileDialog(context, ref, user) : null,
+                ),
+
+                const SizedBox(height: 14),
+
+                // Emergency Contact Card
+                _buildInfoSectionCard(
+                  title: 'Emergency Contact',
+                  content: (user?.emergencyContactName.isNotEmpty ?? false)
+                      ? '${user!.emergencyContactName} ${user.emergencyContactPhone.isNotEmpty ? "(${user.emergencyContactPhone})" : ""}'
+                      : 'Not provided',
+                  icon: Icons.phone_in_talk_rounded,
+                  iconColor: AppTheme.accentEmerald,
+                  onEditTap: user != null ? () => _showEditProfileDialog(context, ref, user) : null,
+                ),
+              ],
 
               const SizedBox(height: 36),
 
@@ -465,4 +494,151 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildCaregiverAccountCard(UserModel? user) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.shield_outlined, color: Color(0xFF4F46E5), size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Caregiver Account Information',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildCaregiverInfoRow('Role', 'Registered Caregiver / Family Member'),
+          const SizedBox(height: 8),
+          _buildCaregiverInfoRow('Email ID', user?.email ?? 'N/A'),
+          const SizedBox(height: 8),
+          _buildCaregiverInfoRow(
+            'Phone',
+            (user?.phone.isNotEmpty ?? false) ? user!.phone : 'Not provided',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCaregiverInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCaregiverMonitoredPatientCard(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel? user,
+  ) {
+    final patientAsync = ref.watch(monitoredPatientProvider);
+    final patient = patientAsync.value;
+    final code = user?.linkedElderCode ?? patient?.elderCode ?? '654321';
+    final patientName = patient?.name ?? 'Assigned Patient (Aslam)';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D9488).withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.elderly_rounded,
+                color: Color(0xFF0D9488), size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      patientName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                        fontFamily: 'Outfit',
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Code: #$code',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0D9488),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Monitored Patient • Live telemetry & SOS alert link active',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

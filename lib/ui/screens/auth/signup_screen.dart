@@ -189,9 +189,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
       return;
     }
 
-    final age = int.tryParse(_ageCtrl.text.trim()) ?? 50;
-    final height = double.tryParse(_heightCtrl.text.trim()) ?? 170.0;
-    final weight = double.tryParse(_weightCtrl.text.trim()) ?? 65.0;
+    final isPatient = _selectedRole == UserRole.patient;
+    final age = int.tryParse(_ageCtrl.text.trim()) ?? (isPatient ? 50 : 0);
+    final height = isPatient ? (double.tryParse(_heightCtrl.text.trim()) ?? 170.0) : 0.0;
+    final weight = isPatient ? (double.tryParse(_weightCtrl.text.trim()) ?? 65.0) : 0.0;
 
     final createdUser = await ref.read(authStateProvider.notifier).signup(
           name: _nameCtrl.text.trim(),
@@ -200,15 +201,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
           role: _selectedRole,
           age: age,
           phone: cleanPhone,
-          linkedElderCode: _selectedRole == UserRole.caregiver
+          linkedElderCode: !isPatient
               ? _elderCodeCtrl.text.trim()
               : null,
-          bloodGroup: _bloodGroupCtrl.text.trim(),
+          bloodGroup: isPatient ? _bloodGroupCtrl.text.trim() : '',
           height: height,
           weight: weight,
-          medicalConditions: _medicalConditionsCtrl.text.trim(),
-          emergencyContactName: _emergencyContactNameCtrl.text.trim(),
-          emergencyContactPhone: _emergencyContactPhoneCtrl.text.trim(),
+          medicalConditions: isPatient ? _medicalConditionsCtrl.text.trim() : '',
+          emergencyContactName: isPatient ? _emergencyContactNameCtrl.text.trim() : '',
+          emergencyContactPhone: isPatient ? _emergencyContactPhoneCtrl.text.trim() : '',
         );
 
     if (!mounted) return;

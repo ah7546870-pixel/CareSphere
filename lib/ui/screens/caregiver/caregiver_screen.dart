@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/medication_alert_repository.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../../data/models/user_model.dart';
 import '../../../data/models/alert_model.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/status_badge.dart';
@@ -17,22 +18,58 @@ class CaregiverScreen extends ConsumerWidget {
     final user = ref.watch(authStateProvider).value;
     final alerts = ref.watch(alertProvider);
 
-    final patientName = (user?.name.isNotEmpty ?? false)
-        ? user!.name
-        : AppConstants.demoPatientName;
-    final patientAge = (user?.age != null && user!.age > 0)
-        ? '${user.age} Yrs'
-        : AppConstants.demoPatientAge;
-    final patientBlood = (user?.bloodGroup != null &&
-            user!.bloodGroup.isNotEmpty &&
-            user.bloodGroup != 'Not specified')
-        ? user.bloodGroup
-        : AppConstants.demoPatientBloodGroup;
+    final patientAsync = ref.watch(monitoredPatientProvider);
+    final patient = patientAsync.value;
+
+    final isPatientUser = user?.role == UserRole.patient;
+    final patientName = (patient?.name.isNotEmpty ?? false)
+        ? patient!.name
+        : (isPatientUser ? user?.name : null) ?? AppConstants.demoPatientName;
+    final patientAge = (patient?.age != null && patient!.age > 0)
+        ? '${patient.age} Yrs'
+        : (isPatientUser && user?.age != null && user!.age > 0 ? '${user.age} Yrs' : null) ?? AppConstants.demoPatientAge;
+    final patientBlood = (patient?.bloodGroup != null &&
+            patient!.bloodGroup.isNotEmpty &&
+            patient.bloodGroup != 'Not specified')
+        ? patient.bloodGroup
+        : (isPatientUser && user?.bloodGroup != null && user!.bloodGroup.isNotEmpty && user.bloodGroup != 'Not specified' ? user.bloodGroup : null) ?? AppConstants.demoPatientBloodGroup;
+    final patientCode = user?.linkedElderCode ?? patient?.elderCode ?? '654321';
 
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
         title: const Text('Caregiver Remote Portal', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit')),
+        actions: [
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF4F46E5)),
+                      const SizedBox(width: 4),
+                      Text(
+                        user.name,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4F46E5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -40,7 +77,7 @@ class CaregiverScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Patient Profile Overview
+              // Monitored Patient Overview
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -66,7 +103,7 @@ class CaregiverScreen extends ConsumerWidget {
                       child: const CircleAvatar(
                         radius: 30,
                         backgroundColor: Color(0xFFE2E8F0),
-                        child: Icon(Icons.person_rounded, size: 36, color: Color(0xFF64748B)),
+                        child: Icon(Icons.elderly_rounded, size: 34, color: Color(0xFF0D9488)),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -74,13 +111,30 @@ class CaregiverScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            patientName,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontFamily: 'Outfit'),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            children: [
+                              Text(
+                                patientName,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontFamily: 'Outfit'),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Patient Code: #$patientCode',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D9488)),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '$patientAge • Blood Group: $patientBlood',
+                            'Monitored Patient • $patientAge • Blood Group: $patientBlood',
                             style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                           ),
                           const SizedBox(height: 6),
