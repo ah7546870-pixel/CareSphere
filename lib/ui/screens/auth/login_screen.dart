@@ -374,7 +374,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => context.go('/signup'),
+                            onTap: () => context.go('/role-selection'),
                             child: const Text(
                               'Create Account',
                               style: TextStyle(

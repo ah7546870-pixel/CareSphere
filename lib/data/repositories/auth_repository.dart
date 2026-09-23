@@ -41,10 +41,14 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<UserModel?> getCurrentUser() async {
-    final authUser = _client.auth.currentUser;
-    if (authUser == null) return UserModel.defaultPatient();
-    final profile = await _fetchProfile(authUser.id);
-    return profile ?? UserModel.defaultPatient();
+    try {
+      final authUser = _client.auth.currentUser;
+      if (authUser == null) return null;
+      final profile = await _fetchProfile(authUser.id, authUser.email);
+      return profile;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -215,6 +219,10 @@ class SupabaseAuthRepository implements AuthRepository {
       }
     } catch (_) {}
 
+    try {
+      await _client.auth.signOut();
+    } catch (_) {}
+
     return UserModel(
       id: userId,
       email: cleanEmail,
@@ -361,7 +369,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
-  Future<void> signup({
+  Future<UserModel?> signup({
     required String name,
     required String email,
     required String password,
@@ -393,9 +401,12 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         emergencyContactName: emergencyContactName,
         emergencyContactPhone: emergencyContactPhone,
       );
-      state = AsyncValue.data(user);
+      // Keep state as null so user must explicitly sign in!
+      state = const AsyncValue.data(null);
+      return user;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      return null;
     }
   }
 

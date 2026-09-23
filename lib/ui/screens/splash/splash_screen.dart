@@ -75,10 +75,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       session = Supabase.instance.client.auth.currentSession;
     } catch (_) {}
     final user = ref.read(authStateProvider).value;
-    if (session != null || user != null) {
+    if (session != null && user != null) {
       context.go('/dashboard');
     } else {
-      context.go('/onboarding');
+      context.go('/role-selection');
     }
   }
 

@@ -4,7 +4,13 @@ import 'package:caresphere/data/models/user_model.dart';
 import 'package:caresphere/data/repositories/auth_repository.dart';
 
 class MockAuthRepository implements AuthRepository {
-  UserModel? _currentUser = UserModel.defaultPatient();
+  UserModel? _currentUser;
+
+  final Map<String, UserModel> _users = {
+    'ah7546870@gmail.com': UserModel.defaultPatient().copyWith(email: 'ah7546870@gmail.com'),
+    'aslam.h2025aiml@sece.ac.in': UserModel.defaultPatient().copyWith(email: 'aslam.h2025aiml@sece.ac.in'),
+    'jeyaram@gmail.com': UserModel.defaultPatient().copyWith(email: 'jeyaram@gmail.com', name: 'Jeyaram'),
+  };
 
   final Set<String> _registeredEmails = {
     'ah7546870@gmail.com',
@@ -39,9 +45,10 @@ class MockAuthRepository implements AuthRepository {
     if (!await checkEmailExists(cleanEmail)) {
       throw Exception('Wrong email ID. The email "$cleanEmail" is not registered. Please check the email ID or create a new account.');
     }
-    _currentUser = UserModel.defaultPatient().copyWith(
-      email: cleanEmail,
-    );
+    _currentUser = _users[cleanEmail] ??
+        UserModel.defaultPatient().copyWith(
+          email: cleanEmail,
+        );
     return _currentUser;
   }
 
@@ -77,7 +84,7 @@ class MockAuthRepository implements AuthRepository {
       throw Exception('The mobile number is already exist in the database ($cleanPhone). Please use a different mobile number.');
     }
 
-    _currentUser = UserModel(
+    final newUser = UserModel(
       id: 'test-id',
       email: cleanEmail,
       name: name,
@@ -86,9 +93,11 @@ class MockAuthRepository implements AuthRepository {
       phone: cleanPhone,
       bloodGroup: bloodGroup,
     );
+    _users[cleanEmail] = newUser;
     _registeredEmails.add(cleanEmail);
     _registeredPhones.add(cleanPhone);
-    return _currentUser;
+    _currentUser = null;
+    return newUser;
   }
 
   @override
@@ -215,7 +224,7 @@ void main() {
       expect(authState.error.toString(), contains('The mail ID and the mobile number are already exist'));
     });
 
-    test('Signup succeeds for completely new user with unique email and mobile number', () async {
+    test('Signup creates user in database, leaves user unauthenticated until explicit login', () async {
       final mockRepo = MockAuthRepository();
       final container = ProviderContainer(
         overrides: [
@@ -233,11 +242,17 @@ void main() {
         phone: '9876543210',
       );
 
+      // Account created in DB, but authState remains unauthenticated until login
       final authState = container.read(authStateProvider);
       expect(authState.hasValue, true);
-      expect(authState.value, isNotNull);
-      expect(authState.value!.email, 'newpatient@example.com');
-      expect(authState.value!.name, 'Brand New User');
+      expect(authState.value, isNull);
+
+      // User must explicitly log in
+      await notifier.login('newpatient@example.com', 'securepassword123');
+      final loggedInState = container.read(authStateProvider);
+      expect(loggedInState.value, isNotNull);
+      expect(loggedInState.value!.email, 'newpatient@example.com');
+      expect(loggedInState.value!.name, 'Brand New User');
     });
 
     test('Logout clears state to null, then re-login works smoothly', () async {

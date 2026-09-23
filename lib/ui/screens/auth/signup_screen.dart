@@ -9,7 +9,8 @@ import 'login_screen.dart'
     show DarkTextField, GradientButton, ErrorBanner, GlowOrb;
 
 class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({super.key});
+  final UserRole? initialRole;
+  const SignupScreen({super.key, this.initialRole});
 
   @override
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
@@ -19,7 +20,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     with SingleTickerProviderStateMixin {
   // Step tracker
   int _step = 0; // 0 = role selection, 1 = profile form
-  UserRole _selectedRole = UserRole.patient;
+  late UserRole _selectedRole;
 
   // Form
   final _formKey = GlobalKey<FormState>();
@@ -52,6 +53,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   @override
   void initState() {
     super.initState();
+    _selectedRole = widget.initialRole ?? UserRole.patient;
+    if (widget.initialRole != null) {
+      _step = 1;
+    }
     _animController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 400));
     _slideAnim = Tween<Offset>(
@@ -188,7 +193,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     final height = double.tryParse(_heightCtrl.text.trim()) ?? 170.0;
     final weight = double.tryParse(_weightCtrl.text.trim()) ?? 65.0;
 
-    await ref.read(authStateProvider.notifier).signup(
+    final createdUser = await ref.read(authStateProvider.notifier).signup(
           name: _nameCtrl.text.trim(),
           email: cleanEmail,
           password: _passCtrl.text.trim(),
@@ -219,12 +224,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
           _phoneError = 'The mobile number is already exist';
         }
       });
-    } else if (state.value != null) {
-      final user = state.value!;
-      if (user.role == UserRole.patient && user.elderCode != null) {
-        _showElderCodeDialog(user.elderCode!);
+    } else if (createdUser != null) {
+      if (createdUser.role == UserRole.patient && createdUser.elderCode != null) {
+        _showElderCodeDialog(createdUser.elderCode!);
       } else {
-        context.go('/dashboard');
+        _showCaregiverSuccessDialog();
       }
     }
   }
@@ -266,10 +270,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                'Share this code with your children so they can monitor your health.',
+                'Share this code with your family members so they can link and monitor your health.\n\nPlease sign in with your email and password to access your dashboard.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: Colors.white.withValues(alpha: 0.65),
                   fontSize: 13,
                   height: 1.5,
                 ),
@@ -318,7 +322,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                   onPressed: () {
                     Navigator.of(ctx).pop();
                     if (mounted) {
-                      context.go('/dashboard');
+                      context.go('/login');
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -328,7 +332,86 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   child: const Text(
-                    'Enter Dashboard',
+                    'Proceed to Sign In',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontFamily: 'Outfit',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCaregiverSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppTheme.navyCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.1), width: 1.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentIndigo.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle_rounded,
+                    color: AppTheme.accentIndigo, size: 40),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Account Created!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Outfit',
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Your caregiver account has been created successfully.\n\nPlease sign in with your email and password to access your dashboard.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.65),
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    if (mounted) {
+                      context.go('/login');
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentIndigo,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text(
+                    'Proceed to Sign In',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -382,9 +465,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                             icon: const Icon(Icons.arrow_back_rounded,
                                 color: Colors.white70),
                             onPressed: () {
-                              _animController.reset();
-                              setState(() => _step = 0);
-                              _animController.forward();
+                              if (widget.initialRole != null) {
+                                context.go('/role-selection');
+                              } else {
+                                _animController.reset();
+                                setState(() => _step = 0);
+                                _animController.forward();
+                              }
                             },
                           ),
                         const Spacer(),
@@ -392,7 +479,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                           onPressed: () => context.go('/login'),
                           style: TextButton.styleFrom(
                               foregroundColor:
-                                  Colors.white.withValues(alpha: 0.5)),
+                                  Colors.white.withValues(alpha: 0.7)),
                           child: const Text('Sign In Instead'),
                         ),
                       ],

@@ -6,6 +6,7 @@ import '../../data/repositories/auth_repository.dart';
 import '../../data/models/user_model.dart';
 import '../../ui/screens/splash/splash_screen.dart';
 import '../../ui/screens/onboarding/onboarding_screen.dart';
+import '../../ui/screens/auth/role_selection_screen.dart';
 import '../../ui/screens/auth/login_screen.dart';
 import '../../ui/screens/auth/signup_screen.dart';
 import '../../ui/screens/auth/forgot_password_screen.dart';
@@ -23,6 +24,7 @@ import '../../ui/screens/profile/profile_screen.dart';
 import '../../ui/screens/settings/settings_screen.dart';
 
 final _authRoutes = {
+  '/role-selection',
   '/login',
   '/signup',
   '/forgot-password',
@@ -73,7 +75,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (isLoggedIn && isAuthRoute) return '/dashboard';
 
       // Redirect logged-out users away from protected screens
-      if (!isLoggedIn && !isAuthRoute) return '/login';
+      if (!isLoggedIn && !isAuthRoute) return '/role-selection';
 
       return null;
     },
@@ -87,12 +89,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
+        path: '/role-selection',
+        builder: (context, state) => const RoleSelectionScreen(),
+      ),
+      GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/signup',
-        builder: (context, state) => const SignupScreen(),
+        builder: (context, state) {
+          final roleParam = state.uri.queryParameters['role'];
+          final initialRole = roleParam == 'caregiver'
+              ? UserRole.caregiver
+              : roleParam == 'patient'
+                  ? UserRole.patient
+                  : null;
+          return SignupScreen(initialRole: initialRole);
+        },
       ),
       GoRoute(
         path: '/forgot-password',

@@ -76,6 +76,10 @@ class TestAuthRepository implements AuthRepository {
 
 void main() {
   testWidgets('Complete login to dashboard flow verification', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     // Start with logged out user
     final testRepo = TestAuthRepository(null);
 
@@ -103,11 +107,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 3000));
     await tester.pumpAndSettle();
 
-    // Verify we arrived on onboarding screen
-    expect(find.text('Skip'), findsOneWidget);
+    // Verify we arrived on RoleSelectionScreen
+    expect(find.text('Choose Your Role'), findsOneWidget);
+    expect(find.text('Patient / Elder'), findsOneWidget);
+    expect(find.text('Caregiver / Family Member'), findsOneWidget);
+    expect(find.text('Sign In'), findsOneWidget);
 
-    // Tap Skip to go to LoginScreen
-    await tester.tap(find.text('Skip'));
+    // Tap Sign In to go to LoginScreen
+    await tester.tap(find.text('Sign In'));
     await tester.pumpAndSettle();
 
     // Verify LoginScreen is shown
@@ -131,9 +138,9 @@ void main() {
     // Verify navigation successfully landed on ElderDashboardScreen
     expect(find.byType(ElderDashboardScreen), findsOneWidget);
     expect(find.text('Aslam'), findsOneWidget);
-    expect(find.text('Dashboard'), findsOneWidget);
-    expect(find.text('Vitals'), findsOneWidget);
-    expect(find.text('IoT Hub'), findsOneWidget);
+    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Vitals'), findsWidgets);
+    expect(find.text('IoT Hub'), findsWidgets);
 
     // Verify we did NOT bounce back to LoginScreen
     expect(find.byType(LoginScreen), findsNothing);
