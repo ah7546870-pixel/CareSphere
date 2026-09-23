@@ -36,7 +36,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
-      final isLoggedIn = session != null;
+      final isLoggedIn = session != null || ref.read(authStateProvider).value != null;
       final isAuthRoute = _authRoutes.contains(state.matchedLocation);
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';

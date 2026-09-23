@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/repositories/auth_repository.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -70,7 +71,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   void _navigate() {
     final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
+    final user = ref.read(authStateProvider).value;
+    if (session != null || user != null) {
       context.go('/dashboard');
     } else {
       context.go('/onboarding');

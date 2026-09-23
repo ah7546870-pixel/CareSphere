@@ -426,19 +426,19 @@ class _ElderDashboardScreenState extends ConsumerState<ElderDashboardScreen>
                   children: [
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.volunteer_activism_rounded,
-                        label: 'Caregiver',
-                        color: AppTheme.primaryTeal,
-                        onTap: () => context.go('/caregiver'),
+                        icon: Icons.router_rounded,
+                        label: 'IoT Hub',
+                        color: AppTheme.accentIndigo,
+                        onTap: () => context.go('/smart-hub'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.router_rounded,
-                        label: 'IoT Hub',
-                        color: AppTheme.accentIndigo,
-                        onTap: () => context.go('/smart-hub'),
+                        icon: Icons.show_chart_rounded,
+                        label: 'History',
+                        color: AppTheme.primaryTeal,
+                        onTap: () => context.go('/telemetry-history'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -453,10 +453,10 @@ class _ElderDashboardScreenState extends ConsumerState<ElderDashboardScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.show_chart_rounded,
-                        label: 'History',
+                        icon: Icons.notifications_rounded,
+                        label: 'Alerts',
                         color: AppTheme.accentAmber,
-                        onTap: () => context.go('/telemetry-history'),
+                        onTap: () => context.go('/alerts'),
                       ),
                     ),
                   ],
