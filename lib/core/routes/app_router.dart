@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/repositories/auth_repository.dart';
-import '../../core/providers/app_providers.dart';
+import '../../data/models/user_model.dart';
 import '../../ui/screens/splash/splash_screen.dart';
 import '../../ui/screens/onboarding/onboarding_screen.dart';
 import '../../ui/screens/auth/login_screen.dart';
@@ -29,14 +29,31 @@ final _authRoutes = {
   '/otp-verify',
 };
 
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+
+  RouterNotifier(this._ref) {
+    _ref.listen<AsyncValue<UserModel?>>(
+      authStateProvider,
+      (_, __) => notifyListeners(),
+    );
+  }
+}
+
+final routerNotifierProvider = Provider<RouterNotifier>((ref) {
+  return RouterNotifier(ref);
+});
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final notifier = ref.watch(routerNotifierProvider);
 
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: notifier,
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
-      final isLoggedIn = session != null || ref.read(authStateProvider).value != null;
+      final authState = ref.read(authStateProvider);
+      final isLoggedIn = session != null || authState.value != null;
       final isAuthRoute = _authRoutes.contains(state.matchedLocation);
       final isSplash = state.matchedLocation == '/splash';
       final isOnboarding = state.matchedLocation == '/onboarding';

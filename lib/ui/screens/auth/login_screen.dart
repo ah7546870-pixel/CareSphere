@@ -50,21 +50,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
     setState(() => _errorMessage = null);
 
-    await ref.read(authStateProvider.notifier).login(
-          _emailCtrl.text.trim(),
-          _passCtrl.text.trim(),
-        );
+    try {
+      await ref.read(authStateProvider.notifier).login(
+            _emailCtrl.text.trim(),
+            _passCtrl.text.trim(),
+          );
 
-    if (!mounted) return;
-    final state = ref.read(authStateProvider);
-    if (state.hasError) {
-      setState(() {
-        _errorMessage = state.error
-            .toString()
-            .replaceFirst('Exception: ', '');
-      });
-    } else if (state.value != null) {
-      context.go('/dashboard');
+      if (!mounted) return;
+      final state = ref.read(authStateProvider);
+      if (state.hasError) {
+        setState(() {
+          _errorMessage = state.error
+              .toString()
+              .replaceFirst('Exception: ', '');
+        });
+      } else if (state.value != null) {
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     }
   }
 
