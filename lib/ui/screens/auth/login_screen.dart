@@ -422,6 +422,9 @@ class DarkTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final TextCapitalization textCapitalization;
+  final FocusNode? focusNode;
+  final void Function(String)? onChanged;
+  final String? errorText;
 
   const DarkTextField({
     super.key,
@@ -434,6 +437,9 @@ class DarkTextField extends StatelessWidget {
     this.keyboardType,
     this.validator,
     this.textCapitalization = TextCapitalization.none,
+    this.focusNode,
+    this.onChanged,
+    this.errorText,
   });
 
   @override
@@ -453,6 +459,8 @@ class DarkTextField extends StatelessWidget {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
+          onChanged: onChanged,
           obscureText: obscureText,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
@@ -460,6 +468,7 @@ class DarkTextField extends StatelessWidget {
           style: const TextStyle(color: Colors.white, fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,
+            errorText: errorText,
             hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
             prefixIcon:
                 Icon(prefixIcon, color: Colors.white38, size: 20),

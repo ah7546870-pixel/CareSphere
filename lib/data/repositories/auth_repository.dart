@@ -22,6 +22,8 @@ abstract class AuthRepository {
     String emergencyContactName,
     String emergencyContactPhone,
   });
+  Future<bool> checkEmailExists(String email);
+  Future<bool> checkPhoneExists(String phone);
   Future<UserModel?> updateProfile(UserModel updatedUser);
   Future<void> logout();
   Future<UserModel?> getCurrentUser();
@@ -46,13 +48,55 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<bool> checkEmailExists(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail.isEmpty) return false;
+    try {
+      final profile = await _fetchProfile('', cleanEmail);
+      if (profile != null) return true;
+      final map = await _supabaseService.getUserByEmail(cleanEmail);
+      return map != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> checkPhoneExists(String phone) async {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 5) return false;
+    try {
+      final matchPhone = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+      final data = await _client
+          .from('caresphere_users')
+          .select('id, phone')
+          .ilike('phone', '%$matchPhone%')
+          .limit(1);
+      if (data.isNotEmpty) return true;
+      final map = await _supabaseService.getUserByPhone(phone);
+      return map != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
   Future<UserModel?> login(String email, String password) async {
-    final cleanEmail = email.trim();
+    final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty) {
-      throw Exception('Please enter your email address');
+      throw Exception('Please enter your email ID');
+    }
+    if (password.trim().isEmpty) {
+      throw Exception('Please enter your password');
     }
 
-    // 1) Attempt Supabase Auth sign-in
+    // 1) Strict verification: Check if email exists in our registered database
+    final emailExists = await checkEmailExists(cleanEmail);
+    if (!emailExists) {
+      throw Exception('Wrong email ID. The email "$cleanEmail" is not registered. Please check the email ID or create a new account.');
+    }
+
+    // 2) The email exists in database. Attempt authentication with Supabase Auth
     try {
       final response = await _client.auth.signInWithPassword(
         email: cleanEmail,
@@ -66,21 +110,28 @@ class SupabaseAuthRepository implements AuthRepository {
           email: cleanEmail,
         );
       }
-    } catch (_) {
-      // Supabase Auth failed (e.g. unconfirmed email, password hash mismatch)
-      // Fallback gracefully below to keep user experience seamless
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid login credentials') || msg.contains('invalid_credentials')) {
+        throw Exception('Incorrect password for "$cleanEmail". Please verify your credentials.');
+      }
+      throw Exception(e.message);
+    } catch (e) {
+      if (e is Exception && e.toString().contains('Wrong email ID')) {
+        rethrow;
+      }
+      // If offline / local test environment
+      if (e.toString().contains('Failed host lookup') || e.toString().contains('ClientException')) {
+        final profile = await _fetchProfile('', cleanEmail);
+        if (profile != null) return profile;
+      }
+      throw Exception('Incorrect credentials for "$cleanEmail". Please try again.');
     }
 
-    // 2) Look up existing profile from database by email
     final dbProfile = await _fetchProfile('', cleanEmail);
-    if (dbProfile != null) {
-      return dbProfile;
-    }
+    if (dbProfile != null) return dbProfile;
 
-    // 3) Default patient fallback (Aslam, 50 Yrs, B+)
-    return UserModel.defaultPatient().copyWith(
-      email: cleanEmail,
-    );
+    throw Exception('Incorrect password for "$cleanEmail". Please verify your credentials.');
   }
 
   @override
@@ -99,10 +150,26 @@ class SupabaseAuthRepository implements AuthRepository {
     String emergencyContactName = '',
     String emergencyContactPhone = '',
   }) async {
-    final cleanEmail = email.trim();
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPhone = phone.trim();
+
+    // 1) Pre-check database for existing email and phone number
+    final emailExists = await checkEmailExists(cleanEmail);
+    final phoneExists = await checkPhoneExists(cleanPhone);
+
+    if (emailExists && phoneExists) {
+      throw Exception('The mail ID and the mobile number are already exist in the database. Please sign in instead.');
+    }
+    if (emailExists) {
+      throw Exception('The mail ID is already exist in the database ($cleanEmail). Please sign in or use a different email ID.');
+    }
+    if (phoneExists) {
+      throw Exception('The mobile number is already exist in the database ($cleanPhone). Please use a different mobile number.');
+    }
+
     String userId = DateTime.now().millisecondsSinceEpoch.toString();
 
-    // 1) Try creating auth user in Supabase Auth
+    // 2) Create auth user in Supabase Auth
     try {
       final response = await _client.auth.signUp(
         email: cleanEmail,
@@ -111,24 +178,26 @@ class SupabaseAuthRepository implements AuthRepository {
       if (response.user != null) {
         userId = response.user!.id;
       }
-    } catch (_) {
-      // User might already exist in auth, continue to create/update profile
-    }
+    } on AuthException catch (e) {
+      if (e.message.toLowerCase().contains('already registered') || e.message.toLowerCase().contains('user_already_exists')) {
+        throw Exception('The email ID "$cleanEmail" is already registered. Please sign in instead.');
+      }
+    } catch (_) {}
 
-    // 2) Generate elder code for patient role
+    // 3) Generate elder code for patient role
     String? elderCode;
     if (role == UserRole.patient) {
       elderCode = (100000 + DateTime.now().millisecondsSinceEpoch % 900000).toString();
     }
 
-    // 3) Insert profile into caresphere_users table
+    // 4) Insert profile into caresphere_users table
     final profileData = {
       'id': userId,
       'email': cleanEmail,
       'name': name.trim(),
       'role': role.name,
       'age': age,
-      'phone': phone.trim(),
+      'phone': cleanPhone,
       'elder_code': elderCode,
       'linked_elder_code': linkedElderCode,
       'blood_group': bloodGroup,
@@ -152,7 +221,7 @@ class SupabaseAuthRepository implements AuthRepository {
       name: name.trim(),
       role: role,
       age: age,
-      phone: phone.trim(),
+      phone: cleanPhone,
       elderCode: elderCode,
       linkedElderCode: linkedElderCode,
       bloodGroup: bloodGroup,

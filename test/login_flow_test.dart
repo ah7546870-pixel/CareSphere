@@ -6,13 +6,41 @@ import 'package:caresphere/data/repositories/auth_repository.dart';
 class MockAuthRepository implements AuthRepository {
   UserModel? _currentUser = UserModel.defaultPatient();
 
+  final Set<String> _registeredEmails = {
+    'ah7546870@gmail.com',
+    'aslam.h2025aiml@sece.ac.in',
+    'jeyaram@gmail.com',
+  };
+
+  final Set<String> _registeredPhones = {
+    '9486926042',
+    '8754814489',
+    '1234567891',
+  };
+
   @override
   Future<UserModel?> getCurrentUser() async => _currentUser;
 
   @override
+  Future<bool> checkEmailExists(String email) async {
+    return _registeredEmails.contains(email.trim().toLowerCase());
+  }
+
+  @override
+  Future<bool> checkPhoneExists(String phone) async {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    final match = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+    return _registeredPhones.any((p) => p.contains(match));
+  }
+
+  @override
   Future<UserModel?> login(String email, String password) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (!await checkEmailExists(cleanEmail)) {
+      throw Exception('Wrong email ID. The email "$cleanEmail" is not registered. Please check the email ID or create a new account.');
+    }
     _currentUser = UserModel.defaultPatient().copyWith(
-      email: email.trim(),
+      email: cleanEmail,
     );
     return _currentUser;
   }
@@ -33,15 +61,33 @@ class MockAuthRepository implements AuthRepository {
     String emergencyContactName = '',
     String emergencyContactPhone = '',
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPhone = phone.trim();
+
+    final emailExists = await checkEmailExists(cleanEmail);
+    final phoneExists = await checkPhoneExists(cleanPhone);
+
+    if (emailExists && phoneExists) {
+      throw Exception('The mail ID and the mobile number are already exist in the database. Please sign in instead.');
+    }
+    if (emailExists) {
+      throw Exception('The mail ID is already exist in the database ($cleanEmail). Please sign in or use a different email ID.');
+    }
+    if (phoneExists) {
+      throw Exception('The mobile number is already exist in the database ($cleanPhone). Please use a different mobile number.');
+    }
+
     _currentUser = UserModel(
       id: 'test-id',
-      email: email,
+      email: cleanEmail,
       name: name,
       role: role,
       age: age,
-      phone: phone,
+      phone: cleanPhone,
       bloodGroup: bloodGroup,
     );
+    _registeredEmails.add(cleanEmail);
+    _registeredPhones.add(cleanPhone);
     return _currentUser;
   }
 
@@ -61,8 +107,8 @@ class MockAuthRepository implements AuthRepository {
 }
 
 void main() {
-  group('Auth and Navigation Flow Tests', () {
-    test('Login sets authenticated state and populates user', () async {
+  group('Auth Repository & Flow Tests', () {
+    test('Login succeeds for registered email and populates user model', () async {
       final mockRepo = MockAuthRepository();
       final container = ProviderContainer(
         overrides: [
@@ -80,6 +126,118 @@ void main() {
       expect(authState.value!.age, 50);
       expect(authState.value!.bloodGroup, 'B+');
       expect(authState.value!.email, 'ah7546870@gmail.com');
+    });
+
+    test('Login fails with error when user mistakenly enters unregistered email', () async {
+      final mockRepo = MockAuthRepository();
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+
+      final notifier = container.read(authStateProvider.notifier);
+      // Attempt login with mistaken/unregistered email
+      await notifier.login('ah7546850@gmail.com', 'password123');
+
+      final authState = container.read(authStateProvider);
+      expect(authState.hasError, true);
+      expect(authState.error.toString(), contains('Wrong email ID'));
+      expect(authState.error.toString(), contains('ah7546850@gmail.com'));
+    });
+
+    test('Signup checks database and rejects duplicate email ID', () async {
+      final mockRepo = MockAuthRepository();
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+
+      final notifier = container.read(authStateProvider.notifier);
+      await notifier.signup(
+        name: 'Duplicate Tester',
+        email: 'ah7546870@gmail.com', // existing email
+        password: 'password123',
+        role: UserRole.patient,
+        age: 60,
+        phone: '9999988888', // unique phone
+      );
+
+      final authState = container.read(authStateProvider);
+      expect(authState.hasError, true);
+      expect(authState.error.toString(), contains('The mail ID is already exist'));
+    });
+
+    test('Signup checks database and rejects duplicate patient mobile number', () async {
+      final mockRepo = MockAuthRepository();
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+
+      final notifier = container.read(authStateProvider.notifier);
+      await notifier.signup(
+        name: 'Duplicate Phone Tester',
+        email: 'unique_user@gmail.com', // unique email
+        password: 'password123',
+        role: UserRole.patient,
+        age: 60,
+        phone: '9486926042', // existing phone
+      );
+
+      final authState = container.read(authStateProvider);
+      expect(authState.hasError, true);
+      expect(authState.error.toString(), contains('The mobile number is already exist'));
+    });
+
+    test('Signup checks database and rejects when both email and mobile already exist', () async {
+      final mockRepo = MockAuthRepository();
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+
+      final notifier = container.read(authStateProvider.notifier);
+      await notifier.signup(
+        name: 'Both Duplicate Tester',
+        email: 'ah7546870@gmail.com', // existing email
+        password: 'password123',
+        role: UserRole.patient,
+        age: 60,
+        phone: '1234567891', // existing phone
+      );
+
+      final authState = container.read(authStateProvider);
+      expect(authState.hasError, true);
+      expect(authState.error.toString(), contains('The mail ID and the mobile number are already exist'));
+    });
+
+    test('Signup succeeds for completely new user with unique email and mobile number', () async {
+      final mockRepo = MockAuthRepository();
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+
+      final notifier = container.read(authStateProvider.notifier);
+      await notifier.signup(
+        name: 'Brand New User',
+        email: 'newpatient@example.com',
+        password: 'securepassword123',
+        role: UserRole.patient,
+        age: 68,
+        phone: '9876543210',
+      );
+
+      final authState = container.read(authStateProvider);
+      expect(authState.hasValue, true);
+      expect(authState.value, isNotNull);
+      expect(authState.value!.email, 'newpatient@example.com');
+      expect(authState.value!.name, 'Brand New User');
     });
 
     test('Logout clears state to null, then re-login works smoothly', () async {

@@ -65,6 +65,12 @@ class TestAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<bool> checkEmailExists(String email) async => true;
+
+  @override
+  Future<bool> checkPhoneExists(String phone) async => false;
+
+  @override
   Future<void> resetPassword(String email) async {}
 }
 

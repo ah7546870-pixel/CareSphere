@@ -38,6 +38,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   bool _obscurePass = true;
   String? _errorMessage;
 
+  final _emailFocusNode = FocusNode();
+  final _phoneFocusNode = FocusNode();
+  String? _emailError;
+  String? _phoneError;
+  bool _isCheckingEmail = false;
+  bool _isCheckingPhone = false;
+
   late AnimationController _animController;
   late Animation<Offset> _slideAnim;
   late Animation<double> _fadeAnim;
@@ -54,6 +61,65 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     _fadeAnim =
         CurvedAnimation(parent: _animController, curve: Curves.easeIn);
     _animController.forward();
+
+    _emailFocusNode.addListener(() {
+      if (!_emailFocusNode.hasFocus) {
+        _checkEmailExistence();
+      }
+    });
+
+    _phoneFocusNode.addListener(() {
+      if (!_phoneFocusNode.hasFocus) {
+        _checkPhoneExistence();
+      }
+    });
+  }
+
+  Future<void> _checkEmailExistence() async {
+    final email = _emailCtrl.text.trim().toLowerCase();
+    if (email.isEmpty || !email.contains('@')) {
+      if (_emailError != null) setState(() => _emailError = null);
+      return;
+    }
+    setState(() => _isCheckingEmail = true);
+    try {
+      final exists = await ref.read(authRepositoryProvider).checkEmailExists(email);
+      if (!mounted) return;
+      setState(() {
+        _isCheckingEmail = false;
+        if (exists) {
+          _emailError = 'The mail ID is already exist';
+        } else {
+          _emailError = null;
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isCheckingEmail = false);
+    }
+  }
+
+  Future<void> _checkPhoneExistence() async {
+    final phone = _phoneCtrl.text.trim();
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 5) {
+      if (_phoneError != null) setState(() => _phoneError = null);
+      return;
+    }
+    setState(() => _isCheckingPhone = true);
+    try {
+      final exists = await ref.read(authRepositoryProvider).checkPhoneExists(phone);
+      if (!mounted) return;
+      setState(() {
+        _isCheckingPhone = false;
+        if (exists) {
+          _phoneError = 'The mobile number is already exist';
+        } else {
+          _phoneError = null;
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isCheckingPhone = false);
+    }
   }
 
   void _nextStep() {
@@ -65,6 +131,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
   @override
   void dispose() {
     _animController.dispose();
+    _emailFocusNode.dispose();
+    _phoneFocusNode.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
@@ -82,7 +150,39 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _errorMessage = null);
+    setState(() {
+      _errorMessage = null;
+      _emailError = null;
+      _phoneError = null;
+    });
+
+    final cleanEmail = _emailCtrl.text.trim().toLowerCase();
+    final cleanPhone = _phoneCtrl.text.trim();
+
+    // Pre-check database if email or phone already exists
+    final authRepo = ref.read(authRepositoryProvider);
+    final emailExists = await authRepo.checkEmailExists(cleanEmail);
+    final phoneExists = await authRepo.checkPhoneExists(cleanPhone);
+
+    if (emailExists || phoneExists) {
+      if (!mounted) return;
+      setState(() {
+        if (emailExists) _emailError = 'The mail ID is already exist';
+        if (phoneExists) _phoneError = 'The mobile number is already exist';
+
+        if (emailExists && phoneExists) {
+          _errorMessage =
+              'The mail ID and the mobile number are already exist in our database. Please sign in instead.';
+        } else if (emailExists) {
+          _errorMessage =
+              'The mail ID is already exist in our database ($cleanEmail). Please sign in or use a different email ID.';
+        } else {
+          _errorMessage =
+              'The mobile number is already exist in our database ($cleanPhone). Please use a different mobile number.';
+        }
+      });
+      return;
+    }
 
     final age = int.tryParse(_ageCtrl.text.trim()) ?? 50;
     final height = double.tryParse(_heightCtrl.text.trim()) ?? 170.0;
@@ -90,11 +190,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
     await ref.read(authStateProvider.notifier).signup(
           name: _nameCtrl.text.trim(),
-          email: _emailCtrl.text.trim(),
+          email: cleanEmail,
           password: _passCtrl.text.trim(),
           role: _selectedRole,
           age: age,
-          phone: _phoneCtrl.text.trim(),
+          phone: cleanPhone,
           linkedElderCode: _selectedRole == UserRole.caregiver
               ? _elderCodeCtrl.text.trim()
               : null,
@@ -109,8 +209,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
     if (!mounted) return;
     final state = ref.read(authStateProvider);
     if (state.hasError) {
-      setState(() => _errorMessage =
-          state.error.toString().replaceFirst('Exception: ', ''));
+      final err = state.error.toString().replaceFirst('Exception: ', '');
+      setState(() {
+        _errorMessage = err;
+        if (err.toLowerCase().contains('mail') || err.toLowerCase().contains('email')) {
+          _emailError = 'The mail ID is already exist';
+        }
+        if (err.toLowerCase().contains('mobile') || err.toLowerCase().contains('phone')) {
+          _phoneError = 'The mobile number is already exist';
+        }
+      });
     } else if (state.value != null) {
       final user = state.value!;
       if (user.role == UserRole.patient && user.elderCode != null) {
@@ -500,12 +608,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
                           flex: 2,
                           child: DarkTextField(
                             controller: _phoneCtrl,
+                            focusNode: _phoneFocusNode,
                             label: 'Phone',
                             hint: '+91 9876543210',
                             prefixIcon: Icons.phone_outlined,
                             keyboardType: TextInputType.phone,
-                            validator: (v) =>
-                                v != null && v.isNotEmpty ? null : 'Required',
+                            errorText: _phoneError,
+                            suffixIcon: _isCheckingPhone
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppTheme.primaryTeal,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            onChanged: (_) {
+                              if (_phoneError != null) {
+                                setState(() => _phoneError = null);
+                              }
+                            },
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Required';
+                              if (_phoneError != null) return _phoneError;
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -582,13 +713,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen>
 
                     DarkTextField(
                       controller: _emailCtrl,
+                      focusNode: _emailFocusNode,
                       label: 'Email Address',
                       hint: 'you@example.com',
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) => v != null && v.contains('@')
-                          ? null
-                          : 'Enter valid email',
+                      errorText: _emailError,
+                      suffixIcon: _isCheckingEmail
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.primaryTeal,
+                                ),
+                              ),
+                            )
+                          : null,
+                      onChanged: (_) {
+                        if (_emailError != null) {
+                          setState(() => _emailError = null);
+                        }
+                      },
+                      validator: (v) {
+                        if (v == null || !v.contains('@')) return 'Enter valid email';
+                        if (_emailError != null) return _emailError;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 14),
                     DarkTextField(
