@@ -144,41 +144,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           crossAxisAlignment:
               compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
           children: [
-            // Logo
-            Center(
-              child: Container(
-                width: compact ? 60 : 72,
-                height: compact ? 60 : 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primaryTeal, AppTheme.primaryTealLight],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryTeal.withValues(alpha: 0.4),
-                      blurRadius: 24,
-                      spreadRadius: 4,
+            // Brand Logo & Title Lockup
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: compact ? Alignment.center : Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: compact ? 44 : 52,
+                    height: compact ? 44 : 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [AppTheme.primaryTeal, AppTheme.primaryTealLight],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryTeal.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          spreadRadius: 3,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Icon(Icons.health_and_safety_rounded,
-                    size: compact ? 32 : 38, color: Colors.white),
+                    child: Icon(
+                      Icons.health_and_safety_rounded,
+                      size: compact ? 24 : 28,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'CareSphere',
+                    style: TextStyle(
+                      fontSize: compact ? 28 : 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontFamily: 'Outfit',
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: compact ? 16 : 28),
+            const SizedBox(height: 16),
             if (!compact) ...[
-              const Text(
-                'CareSphere',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontFamily: 'Outfit',
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 12),
               Text(
                 'The intelligent health guardian\nfor your family.',
                 style: TextStyle(
